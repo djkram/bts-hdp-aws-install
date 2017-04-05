@@ -5,32 +5,39 @@ This guide describes to do manually setup Ambari on EC2 for the purpose of setti
 ### [Hortonhorks Installation Guide](http://docs.hortonworks.com/HDPDocuments/Ambari-2.4.2.0/bk_ambari-installation/content/ch_Getting_Ready.html)
 ### [Hortonhorks in EC2 Post](https://hortonworks.com/blog/deploying-hadoop-cluster-amazon-ec2-hortonworks/)
 
-## AWS Provisioning
+## 1st Step: AMI Creation
 
 ### Create a Security Group
 
-Name: bts-hdp
+* Create new security group with the name: bts-hdp
 
 HTTP         TCP  80         Anywhere
+
 HTTP         TCP  8080       Anywhere
+
 SSH          TCP  22         Anywhere
+
 CustomTCP    TCP  7180       Anywhere
+
+* Save the group and edit again to add:
+
 AllTCP       TCP  0 - 65535  (bts-hdp)
+
 AllUDP       UDP  0 - 65535  (bts-hdp)
 
-### Setting up Apache Ambari on EC2
+### Launch a Instance
 
-#### Create 1 Intance (m4.large) for Ambari Head
-* Redhat enterprise 7
-* Protect against accidental termination
-* Add 100GB magnetic storage (delete on termination)
-* Use security group created
-* Create or use appdev pemfile (maintain in a secure place)
+#### Create 1 Intance (m4.large) with the options
+* AMI: RedHat enterprise 7.3
+* Network: vpc by default + No precense subnet + Public IP Use subnet  setting (enable)
+* Storage: Root disk 40 GB + Add Volume 100GB Magnetic (delete on termination)
+* Use security group created (bts-hdp)
+* Create or use new .pem key (copy this file in a secure place)
 
-### Setup base image
-* SSH as ec2-user to public ip address
+### Setup Base image
+* Connect SSH as ec2-user to public ip address
 ```bash
-ssh -i ec2-user@[master_public_ip]
+ssh -i bts-hdp.pem ec2-user@[public_ip_address]
 ```
 * Check location
 ```bash
@@ -44,28 +51,49 @@ sudo mkfs -t ext4 /dev/xvdb
 ```bash
 sudo mkdir /grid && sudo mount /dev/xvdb /grid
 ```
-* Add info to /etc/fstab to be pernament mount
+
+* Install text editor:
 ```bash
-/dev/xvdb /grid ext4 defaults,nofail 0 2
+sudo yum install nano -y
 ```
-* Reboot and reconnect
+
+* Enable the pernament mount:
+  * edit this file: /etc/fstab
+  ```bash
+  sudo nano /etc/fstab
+  ```
+  * add this line:
+  ```bash
+  /dev/xvdb /grid ext4 defaults,nofail 0 2
+  ```
+
+* Reboot and Reconnect
+```bash
+sudo reboot
+
+ssh -i bts-hdp.pem ec2-user@[public_ip_address]
+```
+
 * Disable SELinux
-  * in /etc/sysconfig/selinux
-```bash
-SELINUX=disabled
-```
-* Install and disable firewall
+  * edit this file: /etc/sysconfig/selinux
+  ```bash
+  sudo nano /etc/fstab
+  ```
+  * change this value:
+  ```bash
+  SELINUX=disabled
+  ```
+
+* Install and disable firewall:
 ```bash
 sudo yum install firewalld
 sudo systemctl disable firewalld
 sudo service firewalld stop
 ```
-* Install ntp
+
+* Install and enable ntp
 ```bash
 sudo yum install ntp
-```
-* Start ntpd
-```bash
 sudo systemctl enable ntpd
 sudo systemctl start ntpd
 ```
@@ -73,45 +101,57 @@ sudo systemctl start ntpd
 ```bash
 umask
 ```
-  * If umask is 0002 edit (/etc/profile) to have umask be just 0022 (remove if statement clause)
+  * If umask is 0002 edit this file: /etc/profile 
+  ```bash
+  sudo nano /etc/profile 
+  ```
+  * Remove the IF statement clause and let only: umask 022
 
-* Reboot 
+* Reboot and Reconnect
 ```bash
 sudo reboot
+
 ssh -i key.pem ec2-user@[master_public_ip]
 ```
+
 * Ensure that umask is 0022
 ```bash
 umask
 ```
-* Add pem key in the nodes
+
+* Go to AWS dashboard and create an AMI based on this instance:
+Right button > Image > Create Image
+
+
+
+## 2nd Step: Spinning up other machines
+
+* Go into AWS Console and create new instances:
+  * 2 Instances m4.large using the AMI created
+
+* Under "configure instance" Add the following lines "as text":
+```bash
+sudo mkdir /grid
+sudo mkfs -t ext4 /dev/xdvb
+sudo mount /dev/xdvb /grid
+```
+* Once created, copy in a file the list of Private DNS.
+
+* Add pthe em key in all the nodes
   * From the local computer we will copy the .pem key in the servers
   ```bash
   scp -i key.pem .aws/marc-bts.pem ec2-user@[public_ip]:
   ```
-  * Move the key in each server
+  * Connect and Move the key in each server
   ```bash
   ssh -i key.pem ec2-user@[public_ip]
 
   mv key.pem .ssh/id_rsa
   ```
 
-* Go to AWS dashboard and create image based on this instance
-Right button > Image > Create Image
 
-### Spinning up other machines
-* Go into AWS Console and create new instances
-  * 2 Instances m4.large using the image created
-* Under configure instance Add the following lines "as text":
-```bash
-sudo mkdir /grid
-sudo mkfs -t ext4 /dev/xdvb
-sudo mount /dev/xdvb /grid
-```
-* Once created, copy in a file the list of Private DNS
+## 3rd Step: Install Ambari
 
-
-## Install Ambari
 * Connect to the Ambari Machine
 * Install wget
 ```bash
@@ -147,12 +187,14 @@ sudo ambari-server start
   sudo systemctl start ntpd
   sudo yum remove snappy
   sudo yum install snappy-devel
+  ```
 
 
+## 4th Step: Install  HDP using Ambari
 
-## Ambari Loadup on EC2
 This is a guide to load up the hadoop ecosystem to begin writing big data applications that interact with HDP
-* Start all nodes: HDPNode1,HDPNode2,ambariHead on ec2
+
+* Start all nodes: HDPNode1, HDPNode2, HDPMaster
 * Start ambari-server on ambariHead
 ```bash
 ssh -i key.pem ec2-user@[master_public_ip]
@@ -183,5 +225,3 @@ sudo ambari-server start
 * For target hosts, copy the privateDNS addresses for all machines
 * For SHH key, paste in the id_rsa file that was generated
 * User is ec2-user
-
-
