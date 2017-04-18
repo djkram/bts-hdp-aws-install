@@ -116,11 +116,7 @@ fi
 ```
  * Remove the IF statement clause and let only: umask 022
 ```bash  
-~~if [ $UID -gt 199 ] && [ "`id -gn`" = "`id -un`" ]; then~~
-    ~~umask 002~~
-~~else~~
     umask 022
-~~fi~~
 ```
  
 * Reboot and Reconnect
