@@ -10,7 +10,7 @@ This guide describes to do manually setup Ambari on EC2 for the purpose of setti
 ### Create a Security Group
 
 * Create new security group with the name: bts-hdp
-
+```bash
 HTTP         TCP  80         Anywhere
 
 HTTP         TCP  8080       Anywhere
@@ -18,13 +18,14 @@ HTTP         TCP  8080       Anywhere
 SSH          TCP  22         Anywhere
 
 CustomTCP    TCP  7180       Anywhere
-
+```
 * Save the group and edit again to add:
 
+```bash
 AllTCP       TCP  0 - 65535  (bts-hdp)
 
 AllUDP       UDP  0 - 65535  (bts-hdp)
-
+```
 ### Launch a Instance
 
 #### Create 1 Intance (m4.large) with the options
