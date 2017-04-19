@@ -78,7 +78,7 @@ ssh -i bts-hdp.pem ec2-user@[public_ip_address]
 * Disable SELinux
   * edit this file: /etc/sysconfig/selinux
   ```bash
-  sudo nano /etc/fstab
+  sudo nano /etc/sysconfig/selinux
   ```
   * change this value:
   ```bash
