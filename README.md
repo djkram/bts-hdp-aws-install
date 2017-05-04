@@ -190,16 +190,6 @@ sudo ambari-server setup
 ```bash
 sudo ambari-server start
 ```
-* SOLVING KNOWN ISSUES:
-  * [known issues](https://docs.hortonworks.com/HDPDocuments/Ambari-2.1.0.0/bk_releasenotes_ambari_2.1.0.0/content/ambari_relnotes-2.1.0.0-known-issues.html)
-  * For each host:
-  ```bash
-  sudo yum install ntp
-  sudo systemctl enable ntpd
-  sudo systemctl start ntpd
-  sudo yum remove snappy
-  sudo yum install snappy-devel
-  ```
 
 
 ## 4th Step: Install  HDP using Ambari
@@ -227,6 +217,13 @@ sudo ambari-server start
   * HBase (noSQL key-value store)
   * Spark (in-memory cluster computing)
 
+### SOLVING KNOWN ISSUES:
+  * [known issues](https://docs.hortonworks.com/HDPDocuments/Ambari-2.1.0.0/bk_releasenotes_ambari_2.1.0.0/content/ambari_relnotes-2.1.0.0-known-issues.html)
+  * To solve warings on HDP services instalation execute on each host:
+  ```bash
+  sudo yum remove snappy
+  sudo yum install snappy-devel
+  ```
 
 ### Create Cluster
 * Connect through browser to ambari at public_url:8080
